@@ -1,0 +1,785 @@
+Padmanaban sir code
+
+Build a convolutional neural network from scratch. Consider it as a baseline. Dataset is available under the folder “3_food_classes”.
+
+Conditions to consider: 
+--- Parameters should not cross 300000
+--- Should not use more than 4 layers (except input and output) 
+--- Use Adam optimizer 
+Improve the baseline model performance and save the weights of improved model
+
+Conditions to consider: 
+--- Apply Data Augmentation
+--- No parameter limits
+--- Can use any number of layers
+--- Use any optimizers of your choice
+--- Use early stopping and save the best model callbacks.
+
+
+
+1. Baseline Model (Convolutional Neural Network)
+
+
+# Import Required Libraries
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+import os
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+
+# Define Directories
+train_dir = r"C:\Datasets\3_food_classes\train"
+test_dir = r"C:\Datasets\3_food_classes\test"
+
+# Load the Dataset Using ImageDataGenerator
+train_datagen = ImageDataGenerator(rescale=1./255)
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(150, 150),
+    batch_size=32,
+    class_mode='categorical'
+)
+
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=(150, 150),
+    batch_size=32,
+    class_mode='categorical'
+)
+
+# Build the Baseline Model
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, Flatten, Dense
+
+# Create a Sequential model
+baseline_model = Sequential()
+
+# Add an input layer with the specified shape
+baseline_model.add(Input(shape=(150, 150, 3)))
+
+# Add the first convolutional layer
+baseline_model.add(Conv2D(32, (3, 3), activation='relu'))
+baseline_model.add(MaxPool2D((2, 2)))
+
+# Add the second convolutional layer
+baseline_model.add(Conv2D(64, (3, 3), activation='relu'))
+baseline_model.add(MaxPool2D((2, 2)))
+
+# Add the third convolutional layer
+baseline_model.add(Conv2D(128, (3, 3), activation='relu'))
+baseline_model.add(MaxPool2D((2, 2)))
+
+# Flatten the output for fully connected layers
+baseline_model.add(Flatten())
+
+# Add a fully connected layer with 128 units and ReLU activation
+baseline_model.add(Dense(128, activation='relu'))
+
+# Add the output layer with 3 units (multi-class classification) and softmax activation
+baseline_model.add(Dense(3, activation='softmax'))
+
+# Model Summary (To check parameter count)
+baseline_model.summary()
+
+
+# Compile model
+baseline_model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+baseline_history = baseline_model.fit(train_generator,epochs=10,validation_data=test_generator)
+
+#inference
+Performance Metrics
+
+*Training Accuracy: 0.8362::  0.8362: The model achieved an accuracy of 83.62% on the training data in this epoch.   
+*Training Loss: 0.5265: The loss value for the model on the training data, which measures how well the model is performing. Lower values generally indicate better performance.
+
+Validation Metrics
+
+Validation Accuracy: 0.3667: The model achieved an accuracy of 50.00% on the validation data in this epoch.
+Validation Loss: 1.7604: The loss value for the model on the validation data. Higher values indicate worse performance.
+Conclusion:
+
+Training vs. Validation Performance:
+
+The model performs significantly better on the training data compared to the validation data. This suggests that the model might be overfitting, meaning it has learned the training data well but is not generalizing to unseen data.
+
+
+
+# Save the Baseline Model
+baseline_model.save('baseline_model.keras')
+
+
+2. Improved Model with Data Augmentation and No Parameter Limits
+# Apply Data Augmentation
+train_datagen_augmented = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+
+train_generator_augmented = train_datagen_augmented.flow_from_directory(
+    train_dir,
+    target_size=(150, 150),
+    batch_size=32,
+    class_mode='categorical'
+)
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, BatchNormalization, Dropout, Input
+
+# Improved model architecture
+improved_model = Sequential()
+
+# Add an input layer with the specified shape
+improved_model.add(Input(shape=(150, 150, 3)))
+
+# Add the first convolutional layer
+improved_model.add(Conv2D(32, (3, 3), activation='relu'))
+improved_model.add(BatchNormalization())
+improved_model.add(MaxPool2D((2, 2)))
+
+# Add the second convolutional layer
+improved_model.add(Conv2D(64, (3, 3), activation='relu'))
+improved_model.add(BatchNormalization())
+improved_model.add(MaxPool2D((2, 2)))
+
+# Add the third convolutional layer
+improved_model.add(Conv2D(128, (3, 3), activation='relu'))
+improved_model.add(BatchNormalization())
+improved_model.add(MaxPool2D((2, 2)))
+
+# Add the fourth convolutional layer
+improved_model.add(Conv2D(256, (3, 3), activation='relu'))
+improved_model.add(BatchNormalization())
+improved_model.add(MaxPool2D((2, 2)))
+
+# Flatten the output for fully connected layers
+improved_model.add(Flatten())
+
+# Add a fully connected layer with 256 units and ReLU activation
+improved_model.add(Dense(256, activation='relu'))
+improved_model.add(Dropout(0.5))
+
+# Add the output layer with 3 units (multi-class classification) and softmax activation
+improved_model.add(Dense(3, activation='softmax'))
+
+# Display the model summary
+improved_model.summary()
+
+
+
+# Compile model
+improved_model.compile(optimizer='adam',loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Early stopping and saving the best model
+callbacks = [
+    tf.keras.callbacks.EarlyStopping(patience=5, monitor='val_loss'),
+    tf.keras.callbacks.ModelCheckpoint('best_improved_model.keras', save_best_only=True)
+]
+
+
+# Train the improved model
+improved_history = improved_model.fit(
+    train_generator_augmented,
+    epochs=20,
+    validation_data=test_generator,
+    callbacks=callbacks
+)
+
+
+#Inference
+Performance Metrics
+
+*Training Accuracy: 0.5801: The model achieved an accuracy of 58.01% on the training data in this epoch.   
+*Training Loss: 1.0888: The loss value for the model on the training data, which measures how well the model is performing. Lower values generally indicate better performance.
+
+Validation Metrics
+
+Validation Accuracy: 0.3333: The model achieved an accuracy of 33.33% on the validation data in this epoch.
+Validation Loss: 2.9505: The loss value for the model on the validation data. Higher values indicate worse performance.
+Conclusion:
+
+Early Stopping: The training process stopped early because the validation loss did not improve for a specified number of epochs (patience). This is a mechanism to prevent overfitting.
+
+Training vs. Validation Performance:
+
+The model performs better on the training data compared to the validation data, but both accuracies are relatively low. The high validation loss suggests that the model is not generalizing well to unseen data.
+
+
+5. Develop a Semantic segmentation model using Unet architecture on the given dataset.
+Dataset contains the images and the corresponding masks. Find the dataset under the folder “Unet_Dataset”. 
+
+Note that the masks are binary. Define the architecture accordingly.
+Run the model for minimum 5 epochs and present your result. The solution will be evaluated based on approach only as it take lot of epochs to produce good result. 
+
+Step 1: Load the Dataset
+
+import os
+import numpy as np
+import cv2
+
+# Paths to the dataset
+image_dir = "C:/Users/DELL/Desktop/Unet_Dataset/images"
+mask_dir = "C:/Users/DELL/Desktop/Unet_Dataset/MASKS_BW"
+
+# Initialize arrays
+images = []
+masks = []
+
+# Load images
+for img_name in sorted(os.listdir(image_dir)):
+    img_path = os.path.join(image_dir, img_name)
+    img = cv2.imread(img_path)
+    img = cv2.resize(img, (128, 128))
+    images.append(img)
+
+# Load masks
+for mask_name in sorted(os.listdir(mask_dir)):
+    mask_path = os.path.join(mask_dir, mask_name)
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    mask = cv2.resize(mask, (128, 128))
+    masks.append(mask)
+
+# Convert lists to numpy arrays
+images = np.array(images)
+masks = np.array(masks)
+
+# Reshape masks to add channel dimension
+masks = np.expand_dims(masks, axis=-1)
+
+print(f'Images shape: {images.shape}')
+print(f'Masks shape: {masks.shape}'
+
+Step 2: Scale the Arrays
+images = images / 255.0
+masks = masks / 255.0
+
+
+Step 3: Split the Data into Train and Test Sets
+rom sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(images, masks, test_size=0.2, random_state=42)
+
+print(f'Training set shape: {X_train.shape}, {y_train.shape}')
+print(f'Test set shape: {X_test.shape}, {y_test.shape}')
+
+
+
+Step 4: Define the U-Net Model
+import tensorflow as tf
+from tensorflow.keras import layers, models
+
+def unet_model(input_size=(128, 128, 3)):
+    inputs = layers.Input(input_size)
+    
+    # Encoder
+    c1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
+    c1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c1)
+    p1 = layers.MaxPooling2D((2, 2))(c1)
+    
+    c2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p1)
+    c2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c2)
+    p2 = layers.MaxPooling2D((2, 2))(c2)
+    
+    c3 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(p2)
+    c3 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(c3)
+    p3 = layers.MaxPooling2D((2, 2))(c3)
+    
+    c4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(p3)
+    c4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(c4)
+    p4 = layers.MaxPooling2D((2, 2))(c4)
+    
+    # Bottleneck
+    c5 = layers.Conv2D(1024, (3, 3), activation='relu', padding='same')(p4)
+    c5 = layers.Conv2D(1024, (3, 3), activation='relu', padding='same')(c5)
+    
+    # Decoder
+    u6 = layers.Conv2DTranspose(512, (2, 2), strides=(2, 2), padding='same')(c5)
+    u6 = layers.concatenate([u6, c4])
+    c6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(u6)
+    c6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(c6)
+    
+    u7 = layers.Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same')(c6)
+    u7 = layers.concatenate([u7, c3])
+    c7 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(u7)
+    c7 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(c7)
+    
+    u8 = layers.Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c7)
+    u8 = layers.concatenate([u8, c2])
+    c8 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(u8)
+    c8 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c8)
+    
+    u9 = layers.Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c8)
+    u9 = layers.concatenate([u9, c1])
+    c9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u9)
+    c9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c9)
+    
+    outputs = layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
+    
+    model = models.Model(inputs=[inputs], outputs=[outputs])
+    return model
+
+model = unet_model()
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.summary()
+
+
+Step 5: Train the Model
+
+history = model.fit(X_train, y_train, epochs=5, batch_size=16, validation_data=(X_test, y_test))
+
+
+# Plot training history
+import matplotlib.pyplot as plt
+
+plt.plot(history.history['loss'], label='train_loss')
+plt.plot(history.history['val_loss'], label='val_loss')
+plt.legend()
+plt.show()
+
+plt.plot(history.history['accuracy'], label='train_accuracy')
+plt.plot(history.history['val_accuracy'], label='val_accuracy')
+plt.legend()
+plt.show()
+
+Step 6: Evaluate the Model
+loss, accuracy = model.evaluate(X_test, y_test)
+print(f'Test loss: {loss}')
+print(f'Test accuracy: {accuracy}')
+
+Conclusion:
+The U-Net model demonstrates a good initial performance with an accuracy of of 81.88% and a validation accuracy of 80.63%, along with a reasonable training loss of 0.4495 and validation loss of 0.4792. This indicates that the model has learned to identify and segment the relevant features in the images to a significant extent.
+
+Further Training: To improve the model’s performance, we can continue training for more epochs, fine-tune hyperparameters, or use data augmentation techniques to enhance the dataset.
+
+
+
+
+Alternate method
+Use of pre-trained Unet segmentation model using the library
+
+# pip install segmentation-models
+# pip install -U segmentation-models
+# pip install -U efficientnet
+
+
+
+from tensorflow import keras
+
+Hints
+
+Load all the images in one array of size 150x128x128x3 Where 150 is total number of trained images 128x128x3 is each image size
+Load all the masks in one array of size 150x128x128x1
+Scale both the above two arrays
+Split the data into train and test
+Define the pre-trained segmentation model
+Compile with appropriate loss and metric and fit the data into it.
+Run the model for minimum 5 epochs and present your result. The solution will be evaluated based on approach only as it take lot of epochs to produce good result.
+
+Step 1: Load the Dataset
+import os
+import numpy as np
+import cv2
+
+# Paths to the dataset
+image_dir = "C:/Users/DELL/Desktop/Unet_Dataset/images"
+mask_dir = "C:/Users/DELL/Desktop/Unet_Dataset/MASKS_BW"
+
+# Initialize arrays
+images = []
+masks = []
+
+# Load images
+for img_name in sorted(os.listdir(image_dir)):
+    img_path = os.path.join(image_dir, img_name)
+    img = cv2.imread(img_path)
+    img = cv2.resize(img, (128, 128))
+    images.append(img)
+
+# Load masks
+for mask_name in sorted(os.listdir(mask_dir)):
+    mask_path = os.path.join(mask_dir, mask_name)
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    mask = cv2.resize(mask, (128, 128))
+    masks.append(mask)
+
+# Convert lists to numpy arrays
+images = np.array(images)
+masks = np.array(masks)
+
+# Reshape masks to add channel dimension
+masks = np.expand_dims(masks, axis=-1)
+
+print(f'Images shape: {images.shape}')
+print(f'Masks shape: {masks.shape}')
+
+Step 2: Scale the Arrays
+images = images / 255.0
+masks = masks / 255.0
+
+
+
+Step 3: Split the Data into Train and Test Sets
+
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(images, masks, test_size=0.2, random_state=42)
+
+print(f'Training set shape: {X_train.shape}, {y_train.shape}')
+print(f'Test set shape: {X_test.shape}, {y_test.shape}')
+
+Step 4: Define the Pre-trained Segmentation Model
+Use the segmentation_models library to load a pre-trained U-Net model.
+
+import segmentation_models as sm
+from tensorflow.keras.optimizers import Adam
+
+# Define the model
+BACKBONE = 'resnet34'
+preprocess_input = sm.get_preprocessing(BACKBONE)
+
+# Preprocess input
+X_train = preprocess_input(X_train)
+X_test = preprocess_input(X_test)
+
+# Define the model
+model = sm.Unet(BACKBONE, input_shape=(128, 128, 3), classes=1, activation='sigmoid')
+
+# Compile the model
+model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+
+model.summary()
+
+
+Step 5: Train the Model
+
+history = model.fit(X_train, y_train, epochs=5, batch_size=16, validation_data=(X_test, y_test))
+
+
+
+# Plot training history
+import matplotlib.pyplot as plt
+
+plt.plot(history.history['loss'], label='train_loss')
+plt.plot(history.history['val_loss'], label='val_loss')
+plt.legend()
+plt.show()
+
+plt.plot(history.history['accuracy'], label='train_accuracy')
+plt.plot(history.history['val_accuracy'], label='val_accuracy')
+plt.legend()
+plt.show()
+
+Step 8: Evaluate the Model
+loss, accuracy = model.evaluate(X_test, y_test)
+print(f'Test loss: {loss}')
+print(f'Test accuracy: {accuracy}')
+
+Inference: It seems like our model is experiencing significant overfitting. The training accuracy is very high at 93.27% with a low loss of 0.1587, but the validation accuracy is very low at 16.99% with a high loss of 93.1350. This discrepancy indicates that our model is not generalizing well to the validation data.
+
+
+
+DL_hackathon.ipynb
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout,GlobalAveragePooling2D,Input,BatchNormalization
+from tensorflow.keras.applications import ResNet50,MobileNetV2,EfficientNetB0
+from tensorflow.keras.callbacks import EarlyStopping,ReduceLROnPlateau
+from tensorflow.keras.optimizers import Adam
+from google.colab import drive
+import os
+
+drive.mount('/content/drive')
+
+base_path = '/content/drive/MyDrive/PES_hackathon/Deeplearning'
+train_csv_path = f'{base_path}/train.csv'
+test_csv_path = f'{base_path}/test.csv'
+train_image_path = f'{base_path}/dataset/train'
+test_image_path = f'{base_path}/dataset/test'
+
+
+train_csv = pd.read_csv(train_csv_path)
+test_csv = pd.read_csv(test_csv_path)
+
+train_csv['label'] = train_csv['label'].astype(str)
+train_csv['file_id'] = train_csv['file_id'].astype(str)
+
+train_csv['file_id'] = train_csv['file_id'] + '.jpg'
+train_csv['file_id'] = train_csv.apply(lambda row: os.path.join(row['label'], row['file_id']), axis=1)
+
+
+test_csv['file_id'] = test_csv['file_id'].astype(str)
+test_csv['file_id'] = test_csv['file_id'] + '.jpg'
+
+
+train_csv.head()
+# fake = 0
+# real = 1
+
+train_df, val_df = train_test_split(train_csv, test_size=0.2, stratify=train_csv['label'])
+
+train_csv.shape
+
+train_df.shape
+
+val_df.shape
+
+image_size = (128, 128)
+batch_size = 16
+
+
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    validation_split=0.2,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    vertical_flip=True,
+    fill_mode='nearest'
+)
+
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+
+# train_generator = train_datagen.flow_from_dataframe(
+#     train_df,
+#     directory=train_image_path,
+#     x_col='file_id',
+#     y_col='label',
+#     target_size=image_size,
+#     batch_size=batch_size,
+#     class_mode='binary',
+#     subset='training'
+# )
+
+train_generator = train_datagen.flow_from_dataframe(
+    train_df,
+    directory=train_image_path,
+    x_col='file_id',
+    y_col='label',
+    target_size=image_size,
+    batch_size=batch_size,
+    class_mode='binary'
+)
+
+
+validation_generator = train_datagen.flow_from_dataframe(
+    val_df,
+    directory=train_image_path,
+    x_col='file_id',
+    y_col='label',
+    target_size=image_size,
+    batch_size=batch_size,
+    class_mode='binary'
+)
+
+test_generator = test_datagen.flow_from_dataframe(
+    test_csv,
+    directory=test_image_path,
+    x_col='file_id',
+    y_col=None,
+    target_size=image_size,
+    batch_size=1,
+    class_mode=None,
+    shuffle=False
+)
+
+#inputs = Input(shape=(128, 128, 3))
+
+
+model = Sequential()
+
+# Add MobileNetV2 base model
+mobilenet_v2 = MobileNetV2(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
+model.add(mobilenet_v2)
+
+# Add GlobalAveragePooling2D
+model.add(GlobalAveragePooling2D())
+
+# Add more layers
+model.add(Dense(512, activation='relu'))
+model.add(BatchNormalization())
+model.add(Dropout(0.5))
+model.add(Dense(128, activation='relu'))
+model.add(BatchNormalization())
+model.add(Dropout(0.5))
+model.add(Dense(1, activation='sigmoid', dtype='float32'))
+
+for layer in mobilenet_v2.layers[-20:]:
+    layer.trainable = True
+
+
+model.compile(optimizer=Adam(learning_rate=0.0001), loss='binary_crossentropy', metrics=['accuracy'])
+early_stopping = EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=2, min_lr=0.00001)
+
+history = model.fit(
+    train_generator,
+    steps_per_epoch=train_generator.samples // batch_size,
+    validation_data=validation_generator,
+    validation_steps=validation_generator.samples // batch_size,
+    epochs=30,
+    callbacks=[early_stopping, reduce_lr]
+)
+
+
+val_loss, val_acc = model.evaluate(validation_generator)
+print(f'Validation Accuracy: {val_acc}')
+
+predictions = model.predict(test_generator)
+predicted_labels = (predictions > 0.5).astype(int).flatten()
+
+
+plt.plot(history.history['accuracy'], label='accuracy')
+plt.plot(history.history['val_accuracy'], label='val_accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+test_csv['label'] = predicted_labels
+submission = test_csv[['file_id', 'label']]
+
+submission
+
+submission['label'].value_counts(normalize=True)*100
+
+submission['file_id'] = submission['file_id'].str.replace('.jpg', '')
+submission['file_id'] = submission['file_id'].astype(int)
+
+
+
+
+############## CNN Model using transfer learning
+
+
+#Build normal CNN
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, GlobalAveragePooling2D,Input
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import ModelCheckpoint
+
+train_dir = "/content/drive/My Drive/Model_DL_ESA_QP/3_food_classes/train/"
+test_dir = "/content/drive/My Drive/Model_DL_ESA_QP/3_food_classes/tes
+
+train_datagen = ImageDataGenerator(rescale=1/255.)
+train_data = train_datagen.flow_from_directory(train_dir, target_size=(128,128), class_mode='categorical',batch_size=32)
+
+test_datagen=ImageDataGenerator(rescale=1/255.)
+test_data = test_datagen.flow_from_directory(test_dir, target_size=(128,128), class_mode='categorical',batch_size=32)
+
+#create a sequential model with 2 3 layers of conv2D and pooling
+
+model = Sequential()
+model.add(Input(shape=(128,128,3)))
+model.add(Conv2D(16,3,activation='relu'))
+model.add(MaxPool2D(pool_size=(2, 2)))
+model.add(Conv2D(16,3,activation='relu'))
+model.add(MaxPool2D(pool_size=(2, 2)))
+model.add(Flatten())
+model.add(Dense(3, activation='softmax'))
+
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['Accuracy'], steps_per_execution=1)
+
+model.fit(train_data, validation_data=test_data, epochs=5, batch_size=32)
+
+test_loss, test_acc = model.evaluate(test_data)
+
+# augmented with callback
+train_datagen = ImageDataGenerator(rotation_range=20,shear_range=0.2,width_shift_range=0.2, height_shift_range=0.2,zoom_range=0.2,horizontal_flip=True,validation_split=0.2, rescale=1/255.)
+train_data = train_datagen.flow_from_directory(train_dir, target_size=(128,128), class_mode='categorical',batch_size=32)
+
+test_datagen=ImageDataGenerator(rescale=1/255.)
+test_data = test_datagen.flow_from_directory(test_dir, target_size=(128,128), class_mode='categorical',batch_size=32)
+
+model = Sequential()
+model.add(Input(shape=(128,128,3)))
+model.add(Conv2D(16,3,activation='relu'))
+model.add(MaxPool2D(pool_size=(2, 2)))
+model.add(Conv2D(16,3,activation='relu'))
+model.add(MaxPool2D(pool_size=(2, 2)))
+model.add(Conv2D(16,3,activation='relu'))
+model.add(MaxPool2D(pool_size=(2, 2)))
+model.add(Conv2D(32,3,activation='relu'))
+model.add(MaxPool2D(pool_size=(2, 2)))
+model.add(Flatten())
+model.add(Dense(3, activation='softmax'))
+
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['Accuracy'], steps_per_execution=1)
+
+model_checkpoint_callback = ModelCheckpoint(
+        filepath='test.weights.h5',
+        save_weights_only=True,
+        monitor='val_accuracy',
+        mode='max',
+        save_best_only=True)
+
+model.fit(train_data, validation_data=test_data, epochs=15, batch_size=32, callbacks=[model_checkpoint_callback])
+
+val_loss, val_accu = model.evaluate(test_data)
+print('Val loss:', val_loss)
+print('Val Accuracy:', val_accu
+
+#######Use the Transfer learning technique to improve the previous section model’s classification performance.
+cust_model=tf.keras.models.load_model("base_model")
+
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, GlobalAveragePooling2D, Input, Dropout, BatchNormalization
+
+
+
+train_dir = "/content/drive/My Drive/Model_DL_ESA_QP/3_food_classes/train/"
+test_dir = "/content/drive/My Drive/Model_DL_ESA_QP/3_food_classes/test/"
+base_model ="/content/drive/My Drive/Model_DL_ESA_QP/base_model/"
+
+cust_model=tf.keras.models.load_model(base_model)
+
+cust_model.trainable=False
+
+model = Sequential([
+    cust_model,
+    GlobalAveragePooling2D(),
+    Dense(1024, activation='relu'),
+    Dropout(0.5),
+    Dense(3, activation='softmax')  # Binary classification output
+])
+
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+from tensorflow.keras.callbacks import EarlyStopping
+
+callback = EarlyStopping(monitor='val_loss', patience=3)
+model.fit(train_data, validation_data=test_data, epochs=15, batch_size=32, callbacks=[callback])
+
+
+val_loss, val_accu = model.evaluate(test_data)
+print('Val loss:', val_loss)
+print('Val Accuracy:', val_accu)
+
+
+
+
