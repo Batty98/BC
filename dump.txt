@@ -1,0 +1,2111 @@
+Session1
+
+import tensorflow as tf
+1. Create a random tensor with 10 rows and 10 columns. Output random values should between range 1 and 10
+a = tf.random.stateless_uniform([10,10], seed=(3,3), minval=1, maxval=10, dtype=tf.int32)
+print(a)
+tf.Tensor(
+[[2 8 9 6 7 5 1 8 6 7]
+ [4 8 4 9 1 6 2 4 8 1]
+ [4 4 6 6 4 3 2 7 4 4]
+ [5 9 8 3 8 8 7 4 8 9]
+ [7 2 8 5 2 2 2 2 1 6]
+ [4 2 7 2 1 3 1 4 8 5]
+ [7 5 5 1 8 5 1 5 7 5]
+ [4 4 4 7 4 9 2 7 9 6]
+ [4 9 2 7 4 4 7 7 5 9]
+ [9 3 1 4 8 1 8 6 5 5]], shape=(10, 10), dtype=int32)
+2. Assign the first value (first row, first column) and last value(last row, last column) to ZERO
+a = tf.Variable(a)
+a[0,0].assign(0)
+a[-1,-1].assign(0)
+b = a.read_value()
+print(b)
+tf.Tensor(
+[[0 8 9 6 7 5 1 8 6 7]
+ [4 8 4 9 1 6 2 4 8 1]
+ [4 4 6 6 4 3 2 7 4 4]
+ [5 9 8 3 8 8 7 4 8 9]
+ [7 2 8 5 2 2 2 2 1 6]
+ [4 2 7 2 1 3 1 4 8 5]
+ [7 5 5 1 8 5 1 5 7 5]
+ [4 4 4 7 4 9 2 7 9 6]
+ [4 9 2 7 4 4 7 7 5 9]
+ [9 3 1 4 8 1 8 6 5 0]], shape=(10, 10), dtype=int32)
+3. Create two tensor constants and perfrom subtraction and division
+a = tf.constant(2)
+b = tf.constant(3)
+
+print("a + b :" , a.numpy() - b.numpy())
+print("Addition with constants: ", a-b)
+print("Addition with constants: ", tf.subtract(a, b))
+print("a * b :" , a.numpy() / b.numpy())
+print("Multiplication with constants: ", a/b)
+print("Multiplication with constants: ", tf.divide(a, b))
+
+a + b : -1
+Addition with constants:  tf.Tensor(-1, shape=(), dtype=int32)
+Addition with constants:  tf.Tensor(-1, shape=(), dtype=int32)
+a * b : 0.6666666666666666
+Multiplication with constants:  tf.Tensor(0.6666666666666666, shape=(), dtype=float64)
+Multiplication with constants:  tf.Tensor(0.6666666666666666, shape=(), dtype=float64)
+4. Create 2 random matrices of size [4,4] and [4,4] with minimum value -10 and maximum value 10 and perform multiplication
+#matrix multiple vs broad cast matrix
+matrix1 = tf.random.stateless_uniform([4,4], seed=(3,3), minval=-10, maxval=10, dtype=tf.int32)
+
+# Create another Constant that produces a 2x1 matrix.
+matrix2 = tf.random.stateless_uniform([4,4], seed=(3,3), minval=-10, maxval=10, dtype=tf.int32)
+
+# Create a Matmul op that takes 'matrix1' and 'matrix2' as inputs.
+# The returned value, 'product', represents the result of the matrix
+# multiplication.
+product = tf.matmul(matrix1, matrix2)
+print("Multiplication with matrixes:", product)
+
+# broadcast matrix in Multiplication
+
+print("broadcast matrix in Multiplication:", matrix1 * matrix2)
+Multiplication with matrixes: tf.Tensor(
+[[  12   78  -98  226]
+ [ -88   18   14   48]
+ [  34  -86  -10   70]
+ [  63  -31 -131  141]], shape=(4, 4), dtype=int32)
+broadcast matrix in Multiplication: tf.Tensor(
+[[ 36  64  64 100]
+ [  9  36  16  36]
+ [100  36  16  36]
+ [ 64   9  25  49]], shape=(4, 4), dtype=int32)
+5. Create a float tensor and cast it into integer
+#cast operations
+a = tf.convert_to_tensor(2.)
+b = tf.cast(a, tf.int32)
+print(a, b)
+tf.Tensor(2.0, shape=(), dtype=float32) tf.Tensor(2, shape=(), dtype=int32)
+##Variable manipulation
+
+Variables are manipulated via the tf.Variable class. A tf.Variable represents a tensor whose value can be changed by running ops on it.Specific ops allow you to read and modify the values of this tensor.
+
+6. Create a tensorflow variable with a name_scope and assign a value 100 to it
+with tf.name_scope("my"):
+    variable = tf.Variable(100)
+print("tensor:", variable)
+print("value:", variable.numpy())
+tensor: <tf.Variable 'my/Variable:0' shape=() dtype=int32, numpy=100>
+value: 100
+7. Square your variable value
+variable = variable * variable
+print("value:", variable.numpy())
+value: 10000
+8. Increment your variable using assign_add() function
+## To use the value of a tf.Variable in a TensorFlow graph, simply treat it like a normal tf.Tensor
+variable = tf.Variable(2)
+variable.assign_add(1)
+print("value:", variable.numpy())
+value: 3
+##Gradient Tape
+
+tf.GradientTape is an API for automatic differentiation - computing the gradient of a computation with respect to its input variables. Tensorflow "records" all operations executed inside the context of a tf.GradientTape onto a "tape" ref: https://www.tensorflow.org/api_docs/python/tf/GradientTape
+
+9. Calculate the first derivative for the function y = 3*(x^3) + 4(x^2), where x = 2
+#First derivative
+x = tf.constant(2.0)
+with tf.GradientTape() as g:
+  g.watch(x)
+  y = (3*(x**3)) + (4*(x**2))
+dy_dx = g.gradient(y, x)
+print(dy_dx)
+
+tf.Tensor(52.0, shape=(), dtype=float32)
+Calculate the second derivative for the function y = (1/12)*(x**4), where x = 2.5
+#second derivative
+x = tf.constant(2.5)
+with tf.GradientTape() as g:
+  g.watch(x)
+  with tf.GradientTape() as gg:
+    gg.watch(x)
+    y = (1/12)*(x**4)
+  dy_dx = gg.gradient(y, x)     
+d2y_dx2 = g.gradient(dy_dx, x)  
+print(d2y_dx2)
+tf.Tensor(6.25, shape=(), dtype=float32)
+
+
+
+
+
+
+
+Deep Learning Session 1: In-Class 1
+1. Creation of Tensors
+2. Slicing of Tensors
+3. Operations on Tensors
+4. Activation Functions
+# Import required Libraries 
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+1. Create a random tensor with 4 rows and 3 columns. Output random values should form a normal distribution
+tf1 = tf.constant([[1,2,3],[4,5,6],[7,8,9],[10,11,12]])
+tf1.numpy
+<bound method _EagerTensorBase.numpy of <tf.Tensor: shape=(4, 3), dtype=int32, numpy=
+array([[ 1,  2,  3],
+       [ 4,  5,  6],
+       [ 7,  8,  9],
+       [10, 11, 12]])>>
+2. Access the second row of the above matrix and print its value alone
+print(tf1[1].numpy())
+print(tf.rank(tf1[1]))
+[4 5 6]
+tf.Tensor(1, shape=(), dtype=int32)
+3. Assign the first value (first row, first column) and last value(last row, last column) to zero
+tv1=tf.Variable(tf1)
+tv1[0,0].assign(0)
+tv1[3,2].assign(0)
+<tf.Variable 'UnreadVariable' shape=(4, 3) dtype=int32, numpy=
+array([[ 0,  2,  3],
+       [ 4,  5,  6],
+       [ 7,  8,  9],
+       [10, 11,  0]])>
+4. Replace all the values of third row to zero
+tv1[3:].assign(0)
+<tf.Variable 'UnreadVariable' shape=(4, 3) dtype=int32, numpy=
+array([[0, 2, 3],
+       [4, 5, 6],
+       [7, 8, 9],
+       [0, 0, 0]])>
+5. Create two tensor constants and perform addition and multiplication
+a=tf.constant([1,2])
+b=tf.constant([4,5])
+print((a+b)) # Addition
+print(a*b) # Element wise Multiplication
+print(a/b) # Division
+print(a%b) # Modulus
+tf.Tensor([5 7], shape=(2,), dtype=int32)
+tf.Tensor([ 4 10], shape=(2,), dtype=int32)
+tf.Tensor([0.25 0.4 ], shape=(2,), dtype=float64)
+tf.Tensor([1 2], shape=(2,), dtype=int32)
+6. Create two tensors [3,2] and [4,6]. Compute the equilidean distance between the two tensor points
+tfa=tf.constant([3,2],dtype=tf.float32)
+tfb=tf.constant([4,6],dtype=tf.float32)
+distance = tf.norm(tfa- tfb)
+distance.numpy()
+4.1231055
+7. Create 2 random matrices of size [3,3] and [3,3] with minimum value 1 and maximum value 10 and perform element wise multiplication and Matrix Multiplications
+a=tf.random.stateless_uniform([3,3],seed=(3,3), minval=1, maxval=10, dtype=tf.float64)
+b=tf.random.stateless_uniform([3,3],seed=(3,3), minval=1, maxval=10, dtype=tf.float64)
+ab=tf.matmul(a, b)
+ab
+<tf.Tensor: shape=(3, 3), dtype=float64, numpy=
+array([[21.07550197, 38.45540232, 20.58751987],
+       [49.62339117, 97.36503146, 52.08003985],
+       [41.19796292, 79.31037633, 43.24928414]])>
+8. Compute the product of determinant of above two matrices
+tf_det_a=tf.linalg.det(a)
+tf_det_b=tf.linalg.det(b)
+
+determinant=tf_det_a*tf_det_b
+determinant.numpy()
+117.44916266542928
+9. Create a float tensor and cast it into integer
+tffloat=tf.constant([1,2,3],dtype=tf.float64)
+tf.cast(tffloat,tf.int32)
+<tf.Tensor: shape=(3,), dtype=int32, numpy=array([1, 2, 3])>
+10. Plot the Sigmoidal activation function using the equation. keep the x value between -10 to 10
+def sigmoid(x):
+    return tf.math.sigmoid(x)
+    
+x = np.linspace(-10, 10, 400)
+xtf = tf.constant(x, dtype=tf.float32)
+ytf = sigmoid(xtf)
+y = ytf.numpy()
+
+plt.plot(x,y)
+plt.title("Sigmoid")
+Text(0.5, 1.0, 'Sigmoid')
+
+
+11. Plot the Relu activation function using the equation. keep the x value between -10 to 10
+def relu(x):
+    return tf.nn.relu(x)
+
+x=np.linspace(-10,10,400)
+tfx=tf.constant(x,dtype=tf.int32)
+tfy=relu(x)
+y=tfy.numpy()
+plt.plot(x,y)
+plt.title("Relu activation function")
+plt.show()
+
+12. Plot the Tanh activation function using the equation. keep the x value between -10 to 10
+def tanh(x):
+    return tf.nn.tanh(x)
+
+x=np.linspace(-10,10,400)
+tfx=tf.constant(x,dtype=tf.int32)
+tfy=tanh(x)
+y=tfy.numpy()
+plt.plot(x,y)
+plt.title("Tanh activation function")
+Text(0.5, 1.0, 'Tanh activation function')
+
+13. Perform the following equation using tensors y = x^4+x^2+6, where x = [1,2,4,2,8,10]
+import tensorflow as tf
+
+# Define the tensor x
+x = tf.constant([1, 2, 4, 2, 8, 10], dtype=tf.float32)
+
+# Compute y using the equation y = x^4 + x^2 + 6
+y = tf.pow(x, 4) + tf.pow(x, 2) + 6
+
+# Convert the result to a NumPy array and print it
+y_numpy = y.numpy()
+print("Computed values of y:", y_numpy)
+
+Computed values of y: [8.0000e+00 2.6000e+01 2.7800e+02 2.6000e+01 4.1660e+03 1.0106e+04]
+14. Consider the regression data below:
+inp=tf.constant([[18,1.5,1.5],[21,3,1.2],[29,7,2.5],[29,11,1.5],[17,1,1.5], [22,2,2.5],[31,12,1.5],[30,8,2.5]])
+
+out=tf.constant([[5],[6],[9],[13],[4.8],[5.5],[13.2],[10.5]])
+
+Compute the model coefficents using adam optimizer ? Use the loss function as Sum of squared error
+
+import tensorflow as tf
+
+# Define the input and output tensors
+inp = tf.constant([[18, 1.5, 1.5], [21, 3, 1.2], [29, 7, 2.5], [29, 11, 1.5], [17, 1, 1.5], [22, 2, 2.5], [31, 12, 1.5], [30, 8, 2.5]], dtype=tf.float32)
+out = tf.constant([[5], [6], [9], [13], [4.8], [5.5], [13.2], [10.5]], dtype=tf.float32)
+
+# Define the model variables (weights and bias)
+W = tf.Variable(tf.random.normal([3, 1]), name="weight")
+b = tf.Variable(tf.random.normal([1]), name="bias")
+
+# Define the linear regression model
+def linear_model(x):
+    return tf.matmul(x, W) + b
+
+# Define the loss function (sum of squared errors)
+def loss_fn(y_true, y_pred):
+    return tf.reduce_sum(tf.square(y_true - y_pred))
+
+# Define the optimizer (Adam)
+optimizer = tf.optimizers.Adam(learning_rate=0.01)
+
+# Training function
+def train_step(inputs, outputs):
+    with tf.GradientTape() as tape:
+        predictions = linear_model(inputs)
+        loss = loss_fn(outputs, predictions)
+    gradients = tape.gradient(loss, [W, b])
+    optimizer.apply_gradients(zip(gradients, [W, b]))
+    return loss
+
+# Training loop
+epochs = 1000
+for epoch in range(epochs):
+    loss = train_step(inp, out)
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}: Loss: {loss.numpy()}")
+
+# Print the final coefficients
+print("Final weights (W):", W.numpy())
+print("Final bias (b):", b.numpy())
+
+Epoch 0: Loss: 1033.2919921875
+Epoch 100: Loss: 98.06767272949219
+Epoch 200: Loss: 45.386627197265625
+Epoch 300: Loss: 17.404855728149414
+Epoch 400: Loss: 6.500765800476074
+Epoch 500: Loss: 3.18772554397583
+Epoch 600: Loss: 2.356309175491333
+Epoch 700: Loss: 2.1459295749664307
+Epoch 800: Loss: 2.0574662685394287
+Epoch 900: Loss: 1.9895515441894531
+Final weights (W): [[ 0.26461938]
+ [ 0.4971494 ]
+ [-0.4455534 ]]
+Final bias (b): [-0.19137368]
+inp=tf.constant([[18,1.5,1.5],[21,3,1.2],[29,7,2.5],[29,11,1.5],[17,1,1.5], [22,2,2.5],[31,12,1.5],[30,8,2.5]], dtype=tf.float32)
+out=tf.constant([[5],[6],[9],[13],[4.8],[5.5],[13.2],[10.5]],dtype=tf.float32)
+
+#defining weights and bias
+W=tf.Variable(tf.random.normal([3,1]))
+b=tf.Variable(tf.random.normal([1]))
+
+#defining regression model
+def linear_model(x):
+    return tf.matmul(x, W) + b
+
+def loss_fn(y_true, y_pred):
+    return tf.reduce_sum(tf.square(y_true - y_pred))
+
+# Define the optimizer (Adam)
+optimizer = tf.optimizers.Adam(learning_rate=0.01)
+
+def train_step(inputs, outputs):
+    with tf.GradientTape() as tape:
+        prediction = linear_model(inputs)
+        loss= loss_fn(out, prediction)
+    gradients = tape.gradient(loss, [W, b])
+    optimizer.apply_gradients(zip(gradients, [W, b]))
+    return loss
+
+epochs = 1000
+for epoch in range(epochs):
+    loss = train_step(inp, out)
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}: Loss: {loss.numpy()}")
+
+# Print the final coefficients
+print("Final weights (W):", W.numpy())
+print("Final bias (b):", b.numpy())
+    
+
+
+
+Epoch 0: Loss: 4257.3720703125
+Epoch 100: Loss: 284.3909606933594
+Epoch 200: Loss: 213.61758422851562
+Epoch 300: Loss: 150.42889404296875
+Epoch 400: Loss: 98.74810791015625
+Epoch 500: Loss: 60.91184616088867
+Epoch 600: Loss: 35.59897232055664
+Epoch 700: Loss: 19.978975296020508
+Epoch 800: Loss: 11.048966407775879
+Epoch 900: Loss: 6.309020042419434
+Final weights (W): [[ 0.36980525]
+ [ 0.2603731 ]
+ [-0.69781065]]
+Final bias (b): [-0.8611765]
+15. Perform the following equation
+new_weight = alpha *Error + previous_weight
+Assign the initial value of new_weight=0
+Randomly create 100 values for error. Update the new_weight for every value of error¶Deep Learning Session 1: In-Class 1
+1. Creation of Tensors
+2. Slicing of Tensors
+3. Operations on Tensors
+4. Activation Functions
+# Import required Libraries 
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+1. Create a random tensor with 4 rows and 3 columns. Output random values should form a normal distribution
+tf1 = tf.constant([[1,2,3],[4,5,6],[7,8,9],[10,11,12]])
+tf1.numpy
+<bound method _EagerTensorBase.numpy of <tf.Tensor: shape=(4, 3), dtype=int32, numpy=
+array([[ 1,  2,  3],
+       [ 4,  5,  6],
+       [ 7,  8,  9],
+       [10, 11, 12]])>>
+2. Access the second row of the above matrix and print its value alone
+print(tf1[1].numpy())
+print(tf.rank(tf1[1]))
+[4 5 6]
+tf.Tensor(1, shape=(), dtype=int32)
+3. Assign the first value (first row, first column) and last value(last row, last column) to zero
+tv1=tf.Variable(tf1)
+tv1[0,0].assign(0)
+tv1[3,2].assign(0)
+<tf.Variable 'UnreadVariable' shape=(4, 3) dtype=int32, numpy=
+array([[ 0,  2,  3],
+       [ 4,  5,  6],
+       [ 7,  8,  9],
+       [10, 11,  0]])>
+4. Replace all the values of third row to zero
+tv1[3:].assign(0)
+<tf.Variable 'UnreadVariable' shape=(4, 3) dtype=int32, numpy=
+array([[0, 2, 3],
+       [4, 5, 6],
+       [7, 8, 9],
+       [0, 0, 0]])>
+5. Create two tensor constants and perform addition and multiplication
+a=tf.constant([1,2])
+b=tf.constant([4,5])
+print((a+b)) # Addition
+print(a*b) # Element wise Multiplication
+print(a/b) # Division
+print(a%b) # Modulus
+tf.Tensor([5 7], shape=(2,), dtype=int32)
+tf.Tensor([ 4 10], shape=(2,), dtype=int32)
+tf.Tensor([0.25 0.4 ], shape=(2,), dtype=float64)
+tf.Tensor([1 2], shape=(2,), dtype=int32)
+6. Create two tensors [3,2] and [4,6]. Compute the equilidean distance between the two tensor points
+tfa=tf.constant([3,2],dtype=tf.float32)
+tfb=tf.constant([4,6],dtype=tf.float32)
+distance = tf.norm(tfa- tfb)
+distance.numpy()
+4.1231055
+7. Create 2 random matrices of size [3,3] and [3,3] with minimum value 1 and maximum value 10 and perform element wise multiplication and Matrix Multiplications
+a=tf.random.stateless_uniform([3,3],seed=(3,3), minval=1, maxval=10, dtype=tf.float64)
+b=tf.random.stateless_uniform([3,3],seed=(3,3), minval=1, maxval=10, dtype=tf.float64)
+ab=tf.matmul(a, b)
+ab
+<tf.Tensor: shape=(3, 3), dtype=float64, numpy=
+array([[21.07550197, 38.45540232, 20.58751987],
+       [49.62339117, 97.36503146, 52.08003985],
+       [41.19796292, 79.31037633, 43.24928414]])>
+8. Compute the product of determinant of above two matrices
+tf_det_a=tf.linalg.det(a)
+tf_det_b=tf.linalg.det(b)
+
+determinant=tf_det_a*tf_det_b
+determinant.numpy()
+117.44916266542928
+9. Create a float tensor and cast it into integer
+tffloat=tf.constant([1,2,3],dtype=tf.float64)
+tf.cast(tffloat,tf.int32)
+<tf.Tensor: shape=(3,), dtype=int32, numpy=array([1, 2, 3])>
+10. Plot the Sigmoidal activation function using the equation. keep the x value between -10 to 10
+def sigmoid(x):
+    return tf.math.sigmoid(x)
+    
+x = np.linspace(-10, 10, 400)
+xtf = tf.constant(x, dtype=tf.float32)
+ytf = sigmoid(xtf)
+y = ytf.numpy()
+
+plt.plot(x,y)
+plt.title("Sigmoid")
+Text(0.5, 1.0, 'Sigmoid')
+
+
+11. Plot the Relu activation function using the equation. keep the x value between -10 to 10
+def relu(x):
+    return tf.nn.relu(x)
+
+x=np.linspace(-10,10,400)
+tfx=tf.constant(x,dtype=tf.int32)
+tfy=relu(x)
+y=tfy.numpy()
+plt.plot(x,y)
+plt.title("Relu activation function")
+plt.show()
+
+12. Plot the Tanh activation function using the equation. keep the x value between -10 to 10
+def tanh(x):
+    return tf.nn.tanh(x)
+
+x=np.linspace(-10,10,400)
+tfx=tf.constant(x,dtype=tf.int32)
+tfy=tanh(x)
+y=tfy.numpy()
+plt.plot(x,y)
+plt.title("Tanh activation function")
+Text(0.5, 1.0, 'Tanh activation function')
+
+13. Perform the following equation using tensors y = x^4+x^2+6, where x = [1,2,4,2,8,10]
+import tensorflow as tf
+
+# Define the tensor x
+x = tf.constant([1, 2, 4, 2, 8, 10], dtype=tf.float32)
+
+# Compute y using the equation y = x^4 + x^2 + 6
+y = tf.pow(x, 4) + tf.pow(x, 2) + 6
+
+# Convert the result to a NumPy array and print it
+y_numpy = y.numpy()
+print("Computed values of y:", y_numpy)
+
+Computed values of y: [8.0000e+00 2.6000e+01 2.7800e+02 2.6000e+01 4.1660e+03 1.0106e+04]
+14. Consider the regression data below:
+inp=tf.constant([[18,1.5,1.5],[21,3,1.2],[29,7,2.5],[29,11,1.5],[17,1,1.5], [22,2,2.5],[31,12,1.5],[30,8,2.5]])
+
+out=tf.constant([[5],[6],[9],[13],[4.8],[5.5],[13.2],[10.5]])
+
+Compute the model coefficents using adam optimizer ? Use the loss function as Sum of squared error
+
+import tensorflow as tf
+
+# Define the input and output tensors
+inp = tf.constant([[18, 1.5, 1.5], [21, 3, 1.2], [29, 7, 2.5], [29, 11, 1.5], [17, 1, 1.5], [22, 2, 2.5], [31, 12, 1.5], [30, 8, 2.5]], dtype=tf.float32)
+out = tf.constant([[5], [6], [9], [13], [4.8], [5.5], [13.2], [10.5]], dtype=tf.float32)
+
+# Define the model variables (weights and bias)
+W = tf.Variable(tf.random.normal([3, 1]), name="weight")
+b = tf.Variable(tf.random.normal([1]), name="bias")
+
+# Define the linear regression model
+def linear_model(x):
+    return tf.matmul(x, W) + b
+
+# Define the loss function (sum of squared errors)
+def loss_fn(y_true, y_pred):
+    return tf.reduce_sum(tf.square(y_true - y_pred))
+
+# Define the optimizer (Adam)
+optimizer = tf.optimizers.Adam(learning_rate=0.01)
+
+# Training function
+def train_step(inputs, outputs):
+    with tf.GradientTape() as tape:
+        predictions = linear_model(inputs)
+        loss = loss_fn(outputs, predictions)
+    gradients = tape.gradient(loss, [W, b])
+    optimizer.apply_gradients(zip(gradients, [W, b]))
+    return loss
+
+# Training loop
+epochs = 1000
+for epoch in range(epochs):
+    loss = train_step(inp, out)
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}: Loss: {loss.numpy()}")
+
+# Print the final coefficients
+print("Final weights (W):", W.numpy())
+print("Final bias (b):", b.numpy())
+
+Epoch 0: Loss: 1033.2919921875
+Epoch 100: Loss: 98.06767272949219
+Epoch 200: Loss: 45.386627197265625
+Epoch 300: Loss: 17.404855728149414
+Epoch 400: Loss: 6.500765800476074
+Epoch 500: Loss: 3.18772554397583
+Epoch 600: Loss: 2.356309175491333
+Epoch 700: Loss: 2.1459295749664307
+Epoch 800: Loss: 2.0574662685394287
+Epoch 900: Loss: 1.9895515441894531
+Final weights (W): [[ 0.26461938]
+ [ 0.4971494 ]
+ [-0.4455534 ]]
+Final bias (b): [-0.19137368]
+inp=tf.constant([[18,1.5,1.5],[21,3,1.2],[29,7,2.5],[29,11,1.5],[17,1,1.5], [22,2,2.5],[31,12,1.5],[30,8,2.5]], dtype=tf.float32)
+out=tf.constant([[5],[6],[9],[13],[4.8],[5.5],[13.2],[10.5]],dtype=tf.float32)
+
+#defining weights and bias
+W=tf.Variable(tf.random.normal([3,1]))
+b=tf.Variable(tf.random.normal([1]))
+
+#defining regression model
+def linear_model(x):
+    return tf.matmul(x, W) + b
+
+def loss_fn(y_true, y_pred):
+    return tf.reduce_sum(tf.square(y_true - y_pred))
+
+# Define the optimizer (Adam)
+optimizer = tf.optimizers.Adam(learning_rate=0.01)
+
+def train_step(inputs, outputs):
+    with tf.GradientTape() as tape:
+        prediction = linear_model(inputs)
+        loss= loss_fn(out, prediction)
+    gradients = tape.gradient(loss, [W, b])
+    optimizer.apply_gradients(zip(gradients, [W, b]))
+    return loss
+
+epochs = 1000
+for epoch in range(epochs):
+    loss = train_step(inp, out)
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}: Loss: {loss.numpy()}")
+
+# Print the final coefficients
+print("Final weights (W):", W.numpy())
+print("Final bias (b):", b.numpy())
+    
+
+
+
+Epoch 0: Loss: 4257.3720703125
+Epoch 100: Loss: 284.3909606933594
+Epoch 200: Loss: 213.61758422851562
+Epoch 300: Loss: 150.42889404296875
+Epoch 400: Loss: 98.74810791015625
+Epoch 500: Loss: 60.91184616088867
+Epoch 600: Loss: 35.59897232055664
+Epoch 700: Loss: 19.978975296020508
+Epoch 800: Loss: 11.048966407775879
+Epoch 900: Loss: 6.309020042419434
+Final weights (W): [[ 0.36980525]
+ [ 0.2603731 ]
+ [-0.69781065]]
+Final bias (b): [-0.8611765]
+15. Perform the following equation
+new_weight = alpha *Error + previous_weight
+Assign the initial value of new_weight=0
+Randomly create 100 values for error. Update the new_weight for every value of error¶
+
+#### Session 2
+Image classifier
+import tensorflow as tf
+import numpy as np
+from matplotlib import pyplot as plt
+
+X=np.load("X.npy") # This input is having sign language images of digits 0 to 9
+Y=np.load("Y.npy") # The encoded label outputs of digits 0 to 9
+
+
+X.shape # There are 2064 images are there in total in this datset. Each image is 64x64 in size
+
+X[600,:,:].shape # Accessing one single image (600th Image)
+
+plt.imshow(X[600,:,:]) # Displaying one single image
+
+Y[600] 
+# encoded output of 600th image. 
+#We can see one at the index position of 2. Hence this is a sign representation of digit 2
+
+# Split the data in to train and test
+from sklearn.model_selection import train_test_split
+xtrain,xtest,ytrain,ytest=train_test_split(X,Y,test_size=0.2,random_state=48)
+
+
+xtrain.shape, xtest.shape
+((1649, 64, 64), (413, 64, 64))
+
+64*64
+
+Xtrain=xtrain.reshape(1649,64*64) 
+# Reshape the matrix image data into a vector
+# 64x64 image reshaped into 1x4096
+# Totally 1649 images are there in Xtrain, hence now the xtrain size is 1649x4096
+
+Xtest=xtest.reshape(413,64*64) # Simillary reshape the Xtest also
+
+
+# Normalize the data between 0 to 1. Image pixels always have the maximum value as 255. 
+# Divide each pixel with 255, so the data scaled between 0 to 1
+Xtrain1=Xtrain/255.
+Xtest1=Xtest/255.
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+img_classifier=Sequential() 
+# Define the neural network as a sequentail model (Sequence of layers from input to output)
+
+img_classifier.add(Dense(units=512,activation='relu',input_dim=4096))
+# through the function Dense, the layers can be added in to neural networks
+#input_dim is having the information about number of neurons in the input layer
+# units is having the information about the number of neurons in the output side of that layer.
+# units = 512 is nothing but the number of neurons in the first hidden layer 
+#( first hidden layer is exist at the output side of input layer)
+# 'relu' activation function is prefred always in hidden layers
+
+img_classifier.add(Dense(units=256,activation='relu'))
+#units =256 is the number of neurons in the second hidden layer
+# input_dim is not required here as it is a sequential model, the network knows that the 
+                     #second hidden layer will recieve the input from first hiiden layer (512 neurons)
+
+img_classifier.add(Dense(units=10,activation='softmax'))
+#The last dense layer is the output layer.
+#The number of neurons in the output layer is number of classes for multiclass problem
+# For multi-class problem, Softmax activation function is prefered
+#The number of neurons in the output layer is "one" for binary class problem
+# For binary class problem, sigmoidal activation function is prefered.
+
+
+img_classifier.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])
+
+# For compiling the model, wee need to provide the optimizer detail.
+# There are many gradiant decent versions of optimizers are available, here we have used adam
+# Loss which the optmizer need to minimize need to be specified.
+# For multi-class problem, we need to give categorical_crossentropy as loss 
+# For binary class problem, we need to give binary_crossentropy
+
+img_classifier.fit(Xtrain1,ytrain,batch_size=32,epochs=100)
+# for the fitting the model we need to provide train input and output
+# BAtch size determine for howmany samples once the weights need to be updated (batch gradient descent detail)
+# Epochs times the the network run again and agin and update the weights to produce minimum error
+
+
+img_classifier.evaluate(Xtest1,ytest)
+# evaluate the model for the test data
+
+img_classifier.predict(Xtest1[1].reshape(1,-1)).round()
+#Predicting the output for the given input image
+
+
+plt.imshow(xtest[1]
+ytest[1] # Actual output of the input Xtest[1]
+
+
+img_classifier.summary()
+
+### MNIST Dataset
+%tensorflow_version 2.x
+import tensorflow
+tensorflow.__version__
+
+2. Initialize the random number generator and code to ignore warnings
+
+# Initialize the random number generator
+import random
+random.seed(0)
+
+# Ignore the warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+
+from tensorflow.keras.datasets import fashion_mnist
+
+# the data, shuffled and split between train and test sets
+(X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
+
+3. Let's visualize some numbers using matplotlib
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+print("Label: {}".format(y_train[8000]))
+plt.imshow(X_train[8000], cmap='gray')
+
+4. Print shape of the data¶
+print(X_train.shape)
+print(y_train.shape)
+print(X_test.shape)
+print(y_test.shape)
+
+5. Reshape train and test sets into compatible shapes
+Sequential model in tensorflow.keras expects data to be in the format (n_e, n_h, n_w, n_c)
+n_e= number of examples, n_h = height, n_w = width, n_c = number of channels
+do not reshape labels
+
+X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
+X_test = X_test.reshape(X_test.shape[0], 28, 28, 1)
+
+
+6. Normalize the data so that data is in range 0-1
+Normalize data
+we must normalize our data as it is always required in neural network models
+we can achieve this by dividing the RGB codes with 255 (which is the maximum RGB code minus the minimum RGB code)
+normalize X_train and X_test
+make sure that the values are float so that we can get decimal points after division
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+
+X_train /= 255
+X_test /= 255
+
+7. Print shape of data and number of images
+print shape of X_train
+print number of images in X_train
+print number of images in X_test
+
+print("X_train shape:", X_train.shape)
+print("Images in X_train:", X_train.shape[0])
+print("Images in X_test:", X_test.shape[0])
+print("Max value in X_train:", X_train.max())
+print("Min value in X_train:", X_train.min())
+
+
+8. One-hot encode the class vector
+convert class vectors (integers) to binary class matrix
+convert y_train and y_test
+number of classes: 10
+we are doing this to use categorical_crossentropy as loss
+
+from tensorflow.keras.utils import to_categorical
+
+y_train = to_categorical(y_train, num_classes=10)
+y_test = to_categorical(y_test, num_classes=10)
+
+print("Shape of y_train:", y_train.shape)
+print("One value of y_train:", y_train[0])
+
+DNN
+9. Initialize a sequential model
+let's a sequential model
+flatten the data
+add Flatten later
+flatten layers flatten 2D arrays to 1D array before building the fully connected layers
+add 2 dense layers
+number of neurons in first layer: 128
+number of neurons in last layer: number of classes
+activation function in first layer: relu
+activation function in last layer: softmax
+we may experiment with any number of neurons for the first Dense layer; however, the final Dense layer must have neurons equal to the number of output classes
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Flatten, Dense
+
+model = Sequential()
+model.add(Flatten())
+model.add(Dense(128, activation="relu"))
+model.add(Dense(10, activation="softmax"))
+
+0. Compile and fit the model
+let's compile our model
+loss: "categorical_crossentropy"
+metrics: "accuracy"
+optimizer: "sgd"
+then next step will be to fit model
+give train data - training features and labels
+batch size: 32
+epochs: 10
+give validation data - testing features and labels
+
+# Compile the model
+model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer="sgd")
+
+# Fit the model
+model.fit(x=X_train, y=y_train, batch_size=32, epochs=10, validation_data=(X_test, y_test))
+
+11. Calculate Final loss and accuracy on test data¶
+model.evaluate(X_test, y_test)
+
+
+
+
+
+
+######## Session3
+From 8 from above
+8. Creating model 1 with input shape 784, 256 hidden nodes in layer1 and an output layer, activation - relu, kernel_regularizer = lambda¶
+
+def train_and_test_loop1(iterations, lr, Lambda, verb=True):
+
+    ## hyperparameters
+    iterations = iterations
+    learning_rate = lr
+    hidden_nodes = 256
+    output_nodes = 10
+
+    model = Sequential()
+    model.add(Dense(hidden_nodes, input_shape=(784,), activation='relu'))
+    model.add(Dense(hidden_nodes, activation='relu'))
+    model.add(Dense(output_nodes, activation='softmax', kernel_regularizer=regularizers.l2(Lambda)))
+    
+    sgd = optimizers.SGD(lr=learning_rate, decay=1e-6, momentum=0.9)
+    # Compile model
+    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+    
+    # Fit the model
+    model.fit(X_train, y_train, epochs=iterations, batch_size=1000, verbose= 1)
+    score = model.evaluate(X_train, y_train, verbose=0)
+    
+    return score
+
+lr = 0.00001
+Lambda = 0
+train_and_test_loop(1, lr, Lambda)
+
+Learning rate lr = 1e8
+Regularization lambda = 1e-7
+
+lr=0.00001 # Choose very small value of learning rate
+lamda=0
+train_and_test_model(10,lr,lamda) # Leading to vanishing gradiant problem
+# loss is not changing in each iteration much and model accuracy is poor. 
+#To understand it run with verbose =1 in the above function
+
+r=0.001 # Increasing the learning_rate to 0.001 improving the performance slightly
+lamda=0 # no regularization
+train_and_test_model(10,lr,lamda)
+
+
+lr=0.1# Increasing the learning_rate to 0.1 improving the performance above 90 percent
+lamda=0
+train_and_test_model(10,lr,lamda
+
+lr=1 # learning rate of 1 giving very good results for this datset [It may not be same for all the data]
+lamda=0
+train_and_test_model(10,lr,lamda)
+
+
+lr=50   # Increasing the lr to 50 leading to Exploding Gradient. Loss going out of control
+lamda=0
+train_and_test_model(10,lr,lamda
+
+lr=0.0000001  # Vanishing Gradient
+lamda=0
+train_and_test_model(10,lr,lamda)
+
+
+lr=1 
+lamda=0.02 # Introduce small regularization, regularization will reduce overfitting, but bias error may slightly increase
+train_and_test_model(10,lr,lamda) # Less overfitting
+
+
+#Coarse tuning - Explore the model for wide span of learning rate and lamda(regularization penalty)
+lr=[0.0001,0.001,0.01,0.1,1,10,20,50]
+lam=[0.0001,0.001,0.01,0.1,1,10,20,50]
+for i,j in zip(lr,lam):
+    score=train_and_test_model(10,i,j)
+    print('epocs:',10,'train_accuracy:',score[0],'test_accuracy:',score[1],'alpha:', i,'Regularization:',j)
+
+####### Session 4
+From 8 from above
+
+3 .a.Prepare a basic CNN (4 Layer) model
+Initialize a sequential model again
+define a sequential model
+add 2 convolutional layers
+no of filters: 32
+kernel size: 3x3
+activation: "relu"
+input shape: (28, 28, 1) for first layer
+flatten the data
+add Flatten later
+flatten layers flatten 2D arrays to 1D array before building the fully connected layers
+add 2 dense layers
+number of neurons in first layer: 128
+number of neurons in last layer: number of classes
+activation function in first layer: relu
+activation function in last layer: softmax
+we may experiment with any number of neurons for the first Dense layer; however, the final Dense layer must have neurons equal to the number of output classes
+
+from tensorflow.keras.layers import Conv2D
+
+model = Sequential()
+model.add(Conv2D(filters=32, kernel_size=3, activation="relu", input_shape=(28, 28, 1)))
+model.add(Conv2D(filters=32, kernel_size=3, activation="relu"))
+model.add(Flatten())
+model.add(Dense(128, activation="relu"))
+model.add(Dense(10, activation="softmax"))
+
+ompile and fit the model
+let's compile our model
+loss: "categorical_crossentropy"
+metrics: "accuracy"
+optimizer: "adam"
+then next step will be to fit model
+give train data - training features and labels
+batch size: 32
+epochs: 10
+give validation data - testing features and labels
+
+3 .b. Fit the model in the data
+# Compile the model
+model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer="adam")
+
+# Fit the model
+model.fit( x=X_train, y=y_train_s, batch_size=32, epochs=10, validation_split = 0.3)
+
+.a. Visualize the performance (Accuracy & Loss for both training & validation datda) of the model
+Final loss and accuracy¶
+model.evaluate(X_test, y_test_s)
+
+## Model with 
+Vanilla CNN + Pooling + Dropout¶
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, Dropout, MaxPooling2D
+
+# Initialize the model
+model = Sequential()
+
+# Add a Convolutional Layer with 32 filters of size 3X3 and activation function as 'relu' 
+model.add(Conv2D(filters=32, kernel_size=3, activation="relu", input_shape=(28, 28, 1)))
+
+# Add a Convolutional Layer with 32 filters of size 3X3 and activation function as 'relu' 
+model.add(Conv2D(filters=32, kernel_size=3, activation="relu"))
+
+# Add a MaxPooling Layer of size 2X2 
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# Apply Dropout with 0.2 probability 
+model.add(Dropout(rate=0.2))
+
+# Flatten the layer
+model.add(Flatten())
+
+# Add Fully Connected Layer with 128 units and activation function as 'relu'
+model.add(Dense(128, activation="relu"))
+
+#Add Fully Connected Layer with 10 units and activation function as 'softmax'
+model.add(Dense(10, activation="softmax"))
+
+
+
+# Compile the model
+model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer="adam")
+
+# Use earlystopping
+callback = tensorflow.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=2, min_delta=0.01)
+
+# Fit the model
+model.fit(x=X_train, y=y_train_s, batch_size=32, epochs=10, validation_data=(X_test, y_test_s), callbacks=[callback])
+
+
+model.evaluate(X_test, y_test_s)
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+plt.imshow(X_test[200].reshape(28, 28), cmap='gray')
+y_pred = model.predict(X_test[200].reshape(1, 28, 28, 1))
+print("Predicted label:", class_names[y_pred.argmax()])
+print("Softmax Outputs:", y_pred)
+print(y_pred.sum())
+
+
+Store tht weights
+# save weights to file
+model.save_weights("fashion_MNIST_weights.h5")
+
+
+
+####### Session 5
+
+Create a new NN
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, Dropout, MaxPooling2D
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.layers import Flatten
+
+# Initialize the model
+model = Sequential()
+
+# Add a Convolutional Layer with 32 filters of size 3X3 and activation function as 'relu' 
+model.add(Conv2D(filters=32, kernel_size=3, activation="relu", input_shape=(28, 28, 1)))
+
+# Add a Convolutional Layer with 32 filters of size 3X3 and activation function as 'relu' 
+model.add(Conv2D(filters=32, kernel_size=3, activation="relu"))
+
+# Add a MaxPooling Layer of size 2X2 
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# Apply Dropout with 0.2 probability 
+model.add(Dropout(rate=0.2))
+
+# Flatten the layer
+model.add(Flatten())
+
+# Add Fully Connected Layer with 128 units and activation function as 'relu'
+model.add(Dense(128, activation="relu"))
+
+#Add Fully Connected Layer with 10 units and activation function as 'softmax'
+model.add(Dense(10, activation="softmax"))
+
+4 .b. Make only dense layers trainable
+freeze the initial convolutional layer weights and train only the dense (FC) layers
+set trainalble = False for all layers other than Dense layers
+
+for layers in model.layers:
+    if('dense' not in layers.name):
+        layers.trainable = False
+    if('dense' in layers.name):
+        print(layers.name + ' is trained')
+
+4 .c. Load pre-trained weights from Fashion MNIST CNN model¶
+model.load_weights(project_path + 'fashion_MNIST_weights.h5')
+
+# Compile the model
+model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer="adam")
+
+model.evaluate(X_test, y_test)
+
+#Set the path where you want to store the model and weights 
+model.save('cnn_ImgNet.h5')
+model.save_weights('cnn_ImgNet_weights.h5')
+
+
+Session1
+Activation functionIn artificial neural networks, helps in defining the output of a node when a input is given.Different types of activations helps in different tasks.  Some examples are -●Sigmoid●Tanh●ReLU●Binary Step Function
+Activation function takes in the output signal from the previous cell andconverts it into some form that can be taken as input to the next cell.
+
+
+hat is the range of Sigmoid, Tanh and ReLU?Answer:Sigmoid (0,1)Tanh (-1, 1)ReLU (0, max
+
+A feedforward neural network and a backpropagation (backward) neural network are two essential concepts in deep learning. Here's a detailed explanation:
+
+Feedforward Neural Network:
+
+A feedforward neural network (FNN) is a type of artificial neural network where the information flows only in one direction, from input layer to hidden layers and then to the output layer, without any feedback loops. The data flows through the network in the following sequence:
+
+1. Input Layer → Hidden Layer(s) → Output Layer
+
+Key characteristics:
+
+1. No feedback connections.
+2. No recurrent connections.
+3. Data flows only forward.
+
+How Feedforward Neural Networks Work:
+
+1. Receive input data.
+2. Apply weights and biases to inputs.
+3. Apply activation functions (e.g., ReLU, sigmoid) to hidden layers.
+4. Produce output.
+
+Backpropagation (Backward) Neural Network:
+
+Backpropagation is an essential algorithm for training feedforward neural networks. It's used to update the model's parameters (weights and biases) to minimize the error between predicted output and actual output.
+
+Backpropagation Process:
+
+1. Forward Pass: Input data flows through the network, producing an output.
+2. Error Calculation: Calculate the difference between predicted output and actual output (loss function).
+3. Backward Pass: Error is propagated backward through the network, adjusting weights and biases.
+4. Weight Update: Update weights and biases based on gradients and learning rate.
+
+Key Steps in Backpropagation:
+
+1. Compute the error gradient with respect to each weight.
+2. Compute the error gradient with respect to each bias.
+3. Update weights and biases using gradients and learning rate.
+
+Purpose of Backpropagation:
+
+1. Minimize the loss function.
+2. Optimize model parameters.
+3. Improve model accuracy.
+
+Relationship between Feedforward and Backpropagation:
+
+Feedforward neural networks are trained using backpropagation. The feedforward network provides the forward pass, while backpropagation provides the backward pass for updating model parameters.
+
+Example Use Cases:
+
+1. Image classification
+2. Speech recognition
+3. Natural language processing
+4. Regression tasks
+
+
+Error and Loss function●In general, error/loss for a neural network is difference between actual value and predicted  value.●The goal is to minimize the error/loss.●Loss Function is a function that is used to calculate the error.●You can choose loss function based on the problem you have at hand.●Loss functions are different for classification and regression
+
+Gradient●Gradient is calculated by optimization function●Gradient is the change in loss with change in  weights.●The weights are modified according to the  calculated gradient.●Same process keep on repeating until the  minima is reached
+
+Gradient descentGradient descent is a method that defines a cost function of parameters and uses a  systematic approach to optimize the values of parameters to get minimum cost  function
+
+Gradient descent variationsGradient descent has 3 variations, these differ in using data to calculate the gradient of the objective function1.Batch gradient descent-Updates the parameter by calculating gradients of whole dataset2.Stochastic gradient descent-Updates the parameters by calculating gradients for each training example3.Mini -batch gradient descent-Updates the parameters by calculating gradients for every mini batch of “n” training example-Combination of batch and stochastic gradient descen
+
+
+Summary of the Neural Network Process-A neural network is made of neurons-These neurons are connected to each other-Every neuron has an activation function that defines it’s output-Then we train our neural network to learn the parameter values i.e. weights and biases-This process consists of forwardprop and backprop-After forward prop we calculate the loss using a loss function and propagate the information  backwards, that’s backprop-This process is repeated layer by layer, until all the neurons receive a loss signal which describes their  contribution to the total loss
+
+
+1. Fully Connected Layer (FCL): Also known as a dense layer, this is a type of neural network layer where every input is connected to every output by a learnable weight.
+
+2. Activation Functions: These introduce non-linearity into a neural network, allowing it to learn and represent more complex relationships between inputs and outputs. Common activation functions include:
+    - ReLU (Rectified Linear Unit)
+    - Sigmoid
+    - Tanh (Hyperbolic Tangent)
+
+3. Softmax Function: A specific type of activation function used for multi-class classification problems. It takes the inputs, normalizes them, and outputs a probability distribution (values between 0 and 1 that add up to 1).
+
+4. Cross-Entropy Loss: A loss function used to measure the difference between predicted probabilities and actual labels. It's commonly used for classification problems.
+
+
+Here's an in-depth explanation of each topic:
+
+1. Fully Connected Layer (FCL)
+
+A Fully Connected Layer (FCL), also known as a dense layer or multilayer perceptron (MLP), is a type of neural network layer where every input is connected to every output by a learnable weight. It's called "fully connected" because each input feature is connected to each output neuron.
+
+Characteristics:
+
+- Each input feature is connected to every output neuron.
+- Each connection has a learnable weight associated with it.
+- The output is computed by taking the dot product of the input features and the weights, followed by an optional bias term.
+
+FCLs are commonly used in the following scenarios:
+
+- Classification problems
+- Regression problems
+- As the final layer in a convolutional neural network (CNN)
+
+2. Activation Functions
+
+Activation functions introduce non-linearity into a neural network, allowing it to learn complex relationships between inputs and outputs. They map the input to an output, typically between 0 and 1 or -1 and 1.
+
+Common activation functions:
+
+1. Sigmoid: Maps input to a value between 0 and 1.
+f(x) = 1 / (1 + exp(-x))
+
+2. ReLU (Rectified Linear Unit): Maps all negative values to 0 and all positive values to the same value.
+f(x) = max(0, x)
+
+3. Tanh (Hyperbolic Tangent): Maps input to a value between -1 and 1.
+f(x) = 2 / (1 + exp(-2x)) - 1
+
+4. Leaky ReLU: A variation of ReLU that allows a small gradient to flow through negative values.
+f(x) = max(alpha*x, x)
+
+5. Swish: A self-gated activation function that outperforms ReLU in some cases.
+f(x) = x * sigmoid(x)
+
+Activation functions are essential for:
+
+- Introducing non-linearity
+- Improving model capacity
+- Reducing the vanishing gradient problem
+
+3. Softmax Function
+
+The Softmax function is a type of activation function commonly used in the output layer of classification models. It maps the input to a probability distribution over multiple classes.
+
+Softmax function:
+
+f(z) = exp(z) / Σ exp(z)
+
+where z is the input and Σ exp(z) is the sum of exponentials over all classes.
+
+Characteristics:
+
+- Ensures output probabilities sum to 1
+- Useful for multi-class classification problems
+- Often used with cross-entropy loss
+
+4. Cross-Entropy Loss
+
+Cross-Entropy Loss, also known as Log Loss, measures the difference between predicted probabilities and true labels. It's commonly used in classification problems.
+
+Binary Cross-Entropy Loss:
+
+L(y, y') = -[y log(y') + (1-y) log(1-y')]
+
+where y is the true label and y' is the predicted probability.
+
+Categorical Cross-Entropy Loss (multi-class):
+
+L(y, y') = -Σ y log(y')
+
+where y is the true label and y' is the predicted probability distribution.
+
+Characteristics:
+
+- Measures the difference between predicted probabilities and true labels
+- Penalizes confident incorrect predictions
+- Optimized using gradient descent
+
+Cross-Entropy Loss is essential for:
+
+- Training classification models
+- Evaluating model performance
+- Comparing different models
+
+These concepts are fundamental to building and training neural networks for classification problems.
+
+Here's an in-depth explanation of the topics you requested:
+
+1. Weight Initialization
+
+Weight initialization refers to the process of setting the initial values of the model's weights before training. Proper initialization is crucial for convergence and performance.
+
+a. Exploding Gradient Descent
+
+Exploding gradient descent occurs when the gradients computed during backpropagation grow exponentially, causing weights to update excessively. This leads to overflow and NaN (Not a Number) values.
+
+Causes:
+
+- Large learning rates
+- Deep networks
+- Large weight initializations
+
+Solutions:
+
+- Xavier initialization (Glorot initialization)
+- Kaiming initialization
+- Gradient clipping
+- Learning rate scheduling
+
+b. Vanishing Gradient Descent
+
+Vanishing gradient descent occurs when gradients become smaller as they propagate backwards through the network, causing weights to update insufficiently.
+
+Causes:
+
+- Deep networks
+- Small learning rates
+- Sigmoid or tanh activation functions
+
+Solutions:
+
+- ReLU or variants (e.g., Leaky ReLU, Parametric ReLU) activation functions
+- Residual connections (ResNets)
+- Gradient clipping
+- Learning rate scheduling
+
+2. Regularization
+
+Regularization techniques prevent overfitting by adding penalties or constraints to the model.
+
+a. Batch Normalization
+
+Batch normalization normalizes the input to each layer, reducing internal covariate shift.
+
+Benefits:
+
+- Faster convergence
+- Improved stability
+- Reduced overfitting
+
+How it works:
+
+1. Compute mean and variance for each mini-batch.
+2. Normalize inputs: (x - mean) / sqrt(variance + epsilon).
+3. Scale and shift: gamma * normalized_x + beta.
+
+b. Dropout
+
+Dropout randomly sets a fraction of neurons to zero during training.
+
+Benefits:
+
+- Reduced overfitting
+- Improved generalization
+
+How it works:
+
+1. Randomly drop neurons with probability p.
+2. Scale outputs: x / (1 - p).
+
+3. Choosing the Right Architecture
+
+Selecting an appropriate architecture depends on the problem type and dataset characteristics.
+
+Considerations:
+
+- Data size and complexity
+- Number of inputs and outputs
+- Type of relationships (linear, non-linear)
+- Computational resources
+
+Common architectures:
+
+- Feedforward networks (FNNs)
+- Convolutional neural networks (CNNs)
+- Recurrent neural networks (RNNs)
+- Transformers
+
+4. Hyperparameter Optimization
+
+Hyperparameter optimization involves searching for the best combination of hyperparameters.
+
+Types of hyperparameters:
+
+- Learning rate
+- Batch size
+- Number of hidden layers
+- Number of units per layer
+- Regularization strength
+
+Optimization techniques:
+
+- Grid search
+- Random search
+- Bayesian optimization
+- Gradient-based optimization
+
+Tools:
+
+- Hyperopt
+- Optuna
+- Ray Tune
+- Keras Tuner
+
+Best practices:
+
+- Monitor performance on validation set
+- Use early stopping
+- Avoid overfitting to hyperparameter search
+
+By understanding these concepts, you'll be better equipped to design and train effective neural networks.
+
+
+### CNN S5
+Here's an in-depth explanation of each topic related to Convolutional Neural Networks (CNNs):
+
+1. Architecture of CNN
+
+A Convolutional Neural Network (CNN) is a type of neural network designed for image and video processing. The architecture of a CNN typically consists of:
+
+- Convolutional Layers: These layers extract features from the input image using convolutional filters.
+- Pooling Layers: These layers downsample the feature maps to reduce spatial dimensions.
+- Flatten Layer: This layer flattens the feature maps into a 1D array.
+- Fully Connected Layers: These layers are used for classification.
+- Output Layer: This layer provides the final output.
+
+2. Convolution and Filter
+
+Convolution:
+
+Convolution is a mathematical operation that combines an image with a filter to produce a feature map. The filter slides over the image, performing element-wise multiplication and summing the results.
+
+Filter:
+
+A filter, also known as a kernel, is a small matrix that scans the input image. The filter's weights are learned during training. Common filter sizes are 3x3, 5x5, or 7x7.
+
+Hands-on Exercise:
+
+- Implement a simple convolution operation using NumPy.
+- Visualize the effect of different filters on an image.
+
+Code Snippet (Python):
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define a sample image
+img = np.random.rand(28, 28)
+
+# Define a 3x3 filter
+filter = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+
+# Convolve the image with the filter
+feature_map = np.convolve2d(img, filter, mode='same')
+
+# Visualize the result
+plt.imshow(feature_map, cmap='gray')
+plt.show()
+
+
+3. Feature Map
+
+A feature map is the output of a convolutional layer. It represents the presence of specific features in the input image. Each feature map corresponds to a particular filter.
+
+Key Characteristics:
+
+- Spatial hierarchy: Early layers capture low-level features (edges, lines), while later layers capture high-level features (objects, textures).
+- Feature selectivity: Each feature map responds to specific features, ignoring others.
+
+4. Max-pool Layers
+
+Max-pooling is a downsampling technique that reduces spatial dimensions of feature maps.
+
+How it works:
+
+1. Divide the feature map into non-overlapping regions (e.g., 2x2).
+2. Compute the maximum value within each region.
+3. Output the maximum values as a new feature map.
+
+Benefits:
+
+- Reduces spatial dimensions, reducing the number of parameters.
+- Helps to achieve translation invariance.
+
+Hands-on Exercise:
+
+- Implement max-pooling using NumPy.
+- Visualize the effect of max-pooling on a feature map.
+
+Code Snippet (Python):
+
+import numpy as np
+
+# Define a sample feature map
+feature_map = np.random.rand(28, 28)
+
+# Define max-pooling parameters
+pool_size = 2
+stride = 2
+
+# Max-pool the feature map
+pooled_map = np.zeros((14, 14))
+for i in range(0, 28, stride):
+    for j in range(0, 28, stride):
+        region = feature_map[i:i+pool_size, j:j+pool_size]
+        pooled_map[i//stride, j//stride] = np.max(region)
+
+# Visualize the result
+plt.imshow(pooled_map, cmap='gray')
+plt.show()
+
+
+5. Other Pooling Types
+
+Other pooling techniques include:
+
+- Average Pooling: Computes the average value within each region.
+- Sum Pooling: Computes the sum of values within each region.
+- L2 Pooling: Computes the L2 norm of values within each region.
+
+6. Sequential Model Compilation - Hands-on
+
+Compile a simple CNN model using Keras.
+
+Code Snippet (Python):
+
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+# Define the model architecture
+model = Sequential()
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
+model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dense(10, activation='softmax'))
+
+# Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+7. Case Study: Image Classification using CNN - Hands-on
+
+Train a CNN model on the
+
+Here's an explanation of the requested topics:
+
+1. What is Transfer Learning (TL)?
+
+Transfer learning is a machine learning technique where a model trained on one task is re-purposed or fine-tuned for another related task. The pre-trained model's knowledge and features learned from the initial task are transferred to the new task, allowing for:
+
+- Faster training times
+- Improved performance
+- Reduced overfitting
+- Fewer training data requirements
+
+TL is particularly useful when:
+
+- Data is scarce or expensive to obtain
+- Tasks share similar features or patterns
+- Computational resources are limited
+
+2. Comparison between Normal Training and Transfer Learning
+
+Normal Training
+
+- Trains a model from scratch on the target task
+- Requires large amounts of task-specific data
+- Computational resources intensive
+- Risk of overfitting
+
+Transfer Learning
+
+- Utilizes pre-trained models as a starting point
+- Fine-tunes the model on the target task
+- Requires less task-specific data
+- Faster training times
+- Reduced risk of overfitting
+
+3. AlexNet
+
+AlexNet is a deep convolutional neural network (CNN) architecture that won the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) in 2012. Key features:
+
+- 8 layers (5 convolutional, 3 fully connected)
+- ReLU activation functions
+- Dropout regularization
+- 60 million parameters
+- Trained on ImageNet (14 million images, 1000 classes)
+
+AlexNet's innovations:
+
+- Deep architecture
+- ReLU activation
+- Dropout regularization
+- Large-scale training
+
+4. VGGNet
+
+VGGNet (VGG-16) is another CNN architecture that won the ILSVRC in 2014. Key features:
+
+- 16 layers (13 convolutional, 3 fully connected)
+- Small convolutional filters (3x3)
+- Max pooling
+- 138 million parameters
+- Trained on ImageNet
+
+VGGNet's contributions:
+
+- Smaller filters for deeper networks
+- Improved performance with increased depth
+- Feature extraction and transfer learning capabilities
+
+5. GoogleNet (Inception Network)
+
+GoogleNet, also known as Inception Network, won the ILSVRC in 2014. Key features:
+
+- 22 layers
+- Inception modules (multiple parallel filters)
+- Global average pooling
+- 6.8 million parameters
+- Trained on ImageNet
+
+GoogleNet's innovations:
+
+- Inception modules for multi-scale feature extraction
+- Reduced parameters while maintaining performance
+- Improved computational efficiency
+
+6. ResNet (Residual Network)
+
+ResNet won the ILSVRC in 2015. Key features:
+
+- 50+ layers
+- Residual connections (skip connections)
+- Batch normalization
+- Global average pooling
+- 25.6 million parameters
+- Trained on ImageNet
+
+ResNet's contributions:
+
+- Residual connections for training deep networks
+- Addressed vanishing gradient problem
+- Improved performance and reduced training time
+
+These architectures have been instrumental in advancing the field of computer vision and deep learning, enabling applications such as image classification, object detection, segmentation, and more.
+
+
+
+Here's a detailed explanation of object detection, performance metrics, approaches, and various algorithms:
+
+1. What is Object Detection?
+
+Object detection is a computer vision task that involves locating and classifying objects within an image or video. The goal is to identify the location, size, and category (e.g., person, car, dog) of each object in the scene. Object detection has numerous applications in:
+
+- Autonomous vehicles
+- Surveillance systems
+- Robotics
+- Image and video analysis
+- Healthcare
+
+2. Performance Metrics
+
+Object detection performance is evaluated using the following metrics:
+
+- Precision: Ratio of true positives (correctly detected objects) to false positives (incorrectly detected objects)
+- Recall: Ratio of true positives to false negatives (missed objects)
+- AP (Average Precision): Average precision across different recall levels
+- mAP (mean Average Precision): Average AP across multiple classes
+- IoU (Intersection over Union): Measures overlap between predicted and ground-truth bounding boxes
+
+3. Object Detection Approaches
+
+There are two primary approaches:
+
+- Two-stage approach: First, generate region proposals, then classify and refine each proposal.
+- One-stage approach: Directly predict object locations and classes without region proposals.
+
+4. Various Algorithms with Region Proposals
+
+a. R-CNN (Region-based Convolutional Neural Networks)
+
+- Proposal generation using Selective Search
+- Extract features from each proposal using CNN
+- Classify proposals using SVM
+
+b. Fast R-CNN
+
+- Improve R-CNN by sharing convolutional features across proposals
+- Use RoI (Region of Interest) pooling to extract fixed-length features
+
+c. Faster R-CNN
+
+- Replace Selective Search with Region Proposal Network (RPN)
+- Generate proposals and refine them using RPN
+
+5. Various Algorithms without Region Proposals
+
+a. YOLO (You Only Look Once)
+
+- Divide image into grid cells
+- Predict bounding boxes and classes directly
+- Real-time detection
+
+b. SSD (Single Shot Detector)
+
+- Use convolutional layers to predict bounding boxes and classes
+- Multi-scale feature maps for better accuracy
+
+Additional algorithms:
+
+- RetinaNet: Improve Faster R-CNN with focal loss and ResNet backbone
+- Mask R-CNN: Extend Faster R-CNN for instance segmentation
+- Deformable R-FCN: Improve Faster R-CNN with deformable convolutional layers
+
+Key differences between YOLO and SSD:
+
+- YOLO uses a single neural network, while SSD uses multiple layers
+- YOLO predicts bounding boxes directly, while SSD uses anchor boxes
+- YOLO is faster, while SSD is more accurate
+
+Comparison of Object Detection Algorithms:
+
+| Algorithm | Speed | Accuracy |
+| --- | --- | --- |
+| YOLO | Fast | Medium |
+| SSD | Medium | High |
+| R-CNN | Slow | Medium |
+| Fast R-CNN | Medium | High |
+| Faster R-CNN | Fast | High |
+| RetinaNet | Fast | High |
+
+Note: Speed and accuracy trade-offs vary depending on the specific implementation and dataset.
+
+
+Here's an in-depth explanation of the concepts related to semantic segmentation:
+
+Semantic Segmentation
+
+Semantic segmentation is a fundamental task in computer vision, where the goal is to assign a class label to each pixel in an image. This task involves understanding the image at a pixel level, recognizing objects, and categorizing them into predefined classes (e.g., cars, pedestrians, buildings, etc.). Semantic segmentation has numerous applications in:
+
+1. Autonomous driving
+2. Medical image analysis
+3. Object detection
+4. Image editing
+5. Robotics
+
+Approaches
+
+1. Sliding Window Approach
+
+The sliding window approach involves dividing the image into smaller regions (windows) and processing each window separately. This method uses a convolutional neural network (CNN) to extract features from each window and then classifies the pixels within that window.
+
+Limitations:
+
+- Computationally expensive
+- Overlaps between windows can lead to redundant computations
+
+2. Fully Convolutional Networks (FCNs)
+
+FCNs replace the fully connected layers in traditional CNNs with convolutional layers, enabling the network to process images of arbitrary sizes. This approach uses:
+
+- Convolutional layers to extract features
+- Upsampling layers to restore original image resolution
+
+Advantages:
+
+- Efficient computation
+- Handles images of varying sizes
+
+3. UpSampling
+
+UpSampling is a technique used to restore the original image resolution after convolutional and pooling layers have reduced the spatial dimensions. Common upsampling methods include:
+
+- Transposed convolution
+- Bilinear interpolation
+- Nearest-neighbor interpolation
+
+U-Net
+
+The U-Net architecture is a popular choice for semantic segmentation tasks. It consists of:
+
+1. Contracting path: Encoder network with convolutional and pooling layers
+2. Expansive path: Decoder network with upsampling and convolutional layers
+3. Skip connections: Feature maps from the contracting path are concatenated with the expansive path to preserve spatial information
+
+Advantages:
+
+- Effective for biomedical image segmentation
+- Handles varying image sizes
+
+Depthwise Separable Convolutions
+
+Depthwise separable convolutions are a type of convolutional layer that factorizes the standard convolution operation into two separate operations:
+
+1. Depthwise convolution: Applies a filter to each input channel separately
+2. Pointwise convolution: Combines the output of depthwise convolution across channels
+
+Advantages:
+
+- Reduces computational complexity
+- Improves model efficiency
+
+MobileNet
+
+MobileNet is a lightweight CNN architecture designed for mobile and embedded vision applications. It uses:
+
+1. Depthwise separable convolutions
+2. Pointwise convolution
+3. Batch normalization
+
+Advantages:
+
+- Fast inference times
+- Low memory requirements
+
+Hands-on
+
+To get hands-on experience with semantic segmentation, you can:
+
+1. Explore popular datasets (e.g., PASCAL VOC, Cityscapes)
+2. Implement U-Net or FCN architectures using deep learning frameworks (e.g., TensorFlow, PyTorch)
+3. Experiment with different upsampling techniques and depthwise separable convolutions
+4. Fine-tune pre-trained models (e.g., MobileNet) for specific tasks
+
+Here's an in-depth overview of metric learning, Siamese networks, and their applications:
+
+Metric Learning
+
+Metric learning is a subfield of machine learning that focuses on learning distance metrics between data points. The goal is to train models that can measure similarity or dissimilarity between inputs, which is crucial for tasks like classification, clustering, and retrieval.
+
+In traditional machine learning, distance metrics like Euclidean distance or cosine similarity are used. However, these metrics may not always capture the underlying relationships between data points. Metric learning aims to learn a customized distance metric that adapts to the specific problem.
+
+Examples of Metric Learning
+
+1. Face verification: Learning to compare faces and determine whether they belong to the same person.
+2. Image retrieval: Retrieving images that are similar to a query image.
+3. Product recommendation: Recommending products based on similarity to previously purchased items.
+4. Natural Language Processing (NLP): Measuring semantic similarity between sentences or documents.
+
+Siamese Networks
+
+A Siamese network is a type of neural network architecture designed for metric learning tasks. It consists of two identical neural networks (twins) that share the same weights.
+
+Architecture:
+
+1. Two input branches (the twins) that process input data independently.
+2. Each branch consists of multiple layers (e.g., convolutional, fully connected).
+3. The outputs of both branches are combined using a distance metric (e.g., L1, L2, cosine similarity).
+4. The network is trained to minimize the distance between similar inputs and maximize the distance between dissimilar inputs.
+
+Applications of Siamese Networks
+
+1. One-shot learning: Learn to recognize new classes with only one example.
+2. Face recognition: Verify identities or detect faces in images.
+3. Signature verification: Authenticate signatures.
+4. Image matching: Match images across different views, lighting conditions, or orientations.
+5. Tracking: Track objects across frames in videos.
+6. Recommendation systems: Recommend items based on user behavior.
+
+How to Train Siamese Networks
+
+1. Data preparation: Create pairs of similar and dissimilar data points.
+2. Define the loss function: Contrastive loss (e.g., triplet loss, pairwise loss) or classification loss (e.g., cross-entropy).
+3. Choose the distance metric: L1, L2, cosine similarity, or learnable metrics.
+4. Optimize the network: Use stochastic gradient descent (SGD) or variants.
+5. Monitor performance: Evaluate on validation sets or test sets.
+
+Triplet Loss (a common loss function for Siamese networks):
+
+1. Anchor (a): A data point.
+2. Positive (p): A similar data point.
+3. Negative (n): A dissimilar data point.
+4. Loss = max(0, d(a, p) - d(a, n) + margin), where d is the distance metric.
+
+Code Example (PyTorch):
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+class SiameseNetwork(nn.Module):
+    def __init__(self):
+        super(SiameseNetwork, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(1, 10, kernel_size=5),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(320, 50),
+            nn.ReLU(),
+            nn.Linear(50, 2)
+        )
+
+    def forward_once(self, x):
+        x = self.conv(x)
+        x = x.view(-1, 320)
+        x = self.fc(x)
+        return x
+
+    def forward(self, input1, input2):
+        output1 = self.forward_once(input1)
+        output2 = self.forward_once(input2)
+        return output1, output2
+
+model = SiameseNetwork()
+criterion = nn.TripletLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.001)
+
+# Train the network
+for epoch in range(10):
+    optimizer.zero_grad()
+    input1, input2, target = # your data loading code
+    output1, output2 = model(input1, input2)
+    loss = criterion(output1, output2, target)
+    loss.backward()
+    optimizer.step()
+
+This example demonstrates a basic Siamese network architecture and training loop using PyTorch.
+
+I hope this explanation helps! Do you have any specific questions or would you like me to elaborate on any of these topics?
+
+
+
+
+import tensorflow
+import tensorflow as tf
+
+
+
+
+# Resize the images as 28x28 
+#(MNIST dataset size is 28x28, as we are using the MNIST model weight, 
+                                                     #we need to resize these images as 28x28 )
+import cv2
+import numpy as np
+X_train_resize=np.zeros((42000,28,28))
+
+
+#The SVHN dataset is provided in the form of h5. We can extract the data as train and test
+                                                                #using the following script. 
+import h5py
+
+data=h5py.File('SVHN_single_grey1.h5','r')
+
+X_train=data['X_train'][:]
+y_train=data['y_train'][:]
+
+X_test=data['X_test'][:]
+y_test=data['y_test'][:]
+
+data.close()
+
+#scaling the data
+x_train=X_train/255.
+x_test=X_test/255.
+
+x_train.shape
+42000,32,32
+
+import matplotlib.pyplot as plt
+plt.imshow(x_train[20,:,:],cmap='gray')
+
+for i in range(42000):
+    X_train_resize[i,:,:]=cv2.resize(x_train[i],dsize=(28,28))
+
+X_test_resize=np.zeros((18000,28,28))
+for i in range(18000):
+    X_test_resize[i,:,:]=cv2.resize(x_test[i],dsize=(28,28))
+
+#Reshape the train and test datasets to make them 4-D
+xtrain1=X_train_resize.reshape(42000,28,28,1) # u can also use np.expand_dim
+xtest1=X_test_resize.reshape(18000,28,28,1)
+
+#Encoding the target variable
+from tensorflow.keras.utils import to_categorical
+ytrain=to_categorical(y_train,num_classes=10)
+ytest=to_categorical(y_test,num_classes=10)
+ytrain[0]
+
+
+# Import the libraries required for CNN
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D,MaxPooling2D,Flatten,Dense,Dropout
+
+
+# The CNN model architecture must be same as the one we have builded for MNIST dataset,
+# because our idea is to apply the weights trained for MNIST dataset to apply here on SVHN data model
+classifier1=Sequential()
+
+classifier1.add(Conv2D(16,(3,3),input_shape=(28,28,1),activation ='relu'))
+classifier1.add(MaxPooling2D(pool_size=(2,2)))
+
+classifier1.add(Conv2D(32,(3,3),activation ='relu'))
+classifier1.add(MaxPooling2D(pool_size=(2,2)))
+
+classifier1.add(Flatten())
+
+classifier1.add(Dense(units=64,activation='relu'))
+classifier1.add(Dense(units=10,activation='softmax'))
+
+
+#Apply the MNIST data model weight on the above CNN architecture
+classifier1.load_weights('my_digit_model.h5')
+
+# Compilation statergy
+classifier1.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
+# Evaluating the "SVHN digit" test data on the model with the "MNIST digit" weights
+classifier1.evaluate(xtest1,ytest)
+#This model producing the accuracy of around 22 percent only as the two dataset are differnt (eventhough both contains digit)
+
+# To improve the performance of this model, we need to re-train some section of the weights 
+# with respect to SVHN dataset.
+
+#One approach is keep the weights of the convolution layer as it is, but re-train the weights of the 
+#dense layers (hidden and output layer)
+# This is know as Transfer Learning through feature extraction
+
+classifier1.layers #accessing the layers
+
+#Accessing the layer name
+for layer in classifier1.layers:
+    print(layer.name)
+
+# Trainability nature of each layer.
+#by default all layer weights are trainable
+for layer in classifier1.layers:
+    print(layer.trainable)
+
+#freeze the convolution layer and train only the dense layer
+for layer in classifier1.layers:
+    if ('dense' not in layer.name):
+        layer.trainable=False
+    if('dense' in layer.name):
+        layer.trainable=True
+
+for layer in classifier1.layers:
+    print(layer.name,layer.trainable)
+# False indicating that these layers can't be trainable (i.e the weights are freezed)
+
+
+classifier1.summary()
+# Non trainable parameters = convolution layer parameters = 160 +4640 =4800
+
+
+# Training the model. In this step only the weights of dense layers will be updated
+# convolution layer weights remain same(same as MNIST model weights)
+classifier1.fit(xtrain1,ytrain,batch_size=32,epochs=10,validation_data=(xtest1,ytest))
+# Model performance improved drastically
+
+
+# The approach is along with tuning dense layer weights, we can also retrain few last convolution layers
+#This is know as Transfer Learning through Fine Tuning
+for layer in classifier1.layers:
+    print(layer.name,layer.trainable)
+classifier1.layers[2].trainable=True
+classifier1.layers[3].trainable=True
+classifier1.layers[4].trainable=True
+print("After unfreezing last convolution layer")
+for layer in classifier1.layers:
+    print(layer.name,layer.trainable)
+
+
+# Train the model. In this step along with all the dense layers, last convolution layer 
+                                                           #weights also will be updated
+classifier1.fit(xtrain1,ytrain,batch_size=32,epochs=10,validation_data=(xtest1,ytest))
+
+# Reduce overfitting - Include dropout layer
+classifier1=Sequential()
+
+classifier1.add(Conv2D(16,(3,3),input_shape=(28,28,1),activation ='relu'))
+classifier1.add(MaxPooling2D(pool_size=(2,2)))
+
+classifier1.add(Conv2D(32,(3,3),activation ='relu'))
+classifier1.add(MaxPooling2D(pool_size=(2,2)))
+classifier1.add(Dropout(0.2))
+
+classifier1.add(Flatten())
+
+classifier1.add(Dense(units=64,activation='relu'))
+classifier1.add(Dropout(0.2))
+classifier1.add(Dense(units=10,activation='softmax'))
+
+for layer in classifier1.layers:
+    print(layer.name,layer.trainable)
+
+classifier1.load_weights('my_digit_model.h5')
+
+for layer in classifier1.layers:
+    if ('dense' not in layer.name):
+        layer.trainable=False
+    if('dense' in layer.name):
+        layer.trainable=True
+
+classifier1.layers[2].trainable=True
+
+
+classifier1.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
+classifier1.fit(xtrain1,ytrain,batch_size=32,epochs=5,validation_data=(xtest1,ytest))
+
+
+
+if a model is a given, following seems to work. Will experiment in exam 🙂
+
+base_model = tf.keras.models.load_model("base_model") #base_model is folder where model is present
+transfer_model = Sequential( [base_model, Flatten(),
+                              Dropout(0.2),
+                             Dense(512, activation='leaky_relu'),
+                             Dropout(0.2),
+                             Dense(256, activation='leaky_relu'),
+                             Dropout(0.2),
+                             Dense(128, activation='leaky_relu'),
+                             Dropout(0.2),
+                             Dense(5, activation='softmax')])
+transfer_model.compile(optimizer='Adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+transfer_model.summary()
+
+
+Tried with tf.keras.applications.MobileNet instead of loading model from a file and it worked.
+base_model = tf.keras.applications.MobileNet(input_shape=(256,256,3), include_top=False)
+base_model.summary()
+base_model.trainable=False
